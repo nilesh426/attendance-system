@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+
+<style>
+  .landing-wrapper {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem;
+    animation: fadeIn 0.8s ease-in-out;
+    background-color: #1e1e1e;
+    border-radius: 12px;
+  }
+
+  .landing-title {
+    font-size: 2.8rem;
+    font-weight: bold;
+    color: #00e5ff;
+  }
+
+  .landing-subtitle {
+    font-size: 1.2rem;
+    color: #b0bec5;
+    margin-top: 1rem;
+    max-width: 600px;
+  }
+
+  .landing-actions a {
+    margin: 0.75rem;
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<div class="landing-wrapper container shadow-sm">
+  <h1 class="landing-title">Welcome to the Attendance Management System</h1>
+  <p class="landing-subtitle">
+    Log in or create an account to manage students, departments, and attendance records with ease.
+  </p>
+
+  <div class="landing-actions mt-4">
+    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">Log In</a>
+    <a href="{{ url_for('register') }}" class="btn btn-outline-success btn-lg">Register</a>
+  </div>
+</div>
+
+{% endblock %}

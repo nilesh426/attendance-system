@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Defaulter List{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Defaulter List</h2>
+
+    {% if defaulters %}
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Roll No</th>
+                        <th>Department</th>
+                        <th>Total Classes</th>
+                        <th>Present</th>
+                        <th>Attendance %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in defaulters %}
+                        <tr>
+                            <td>{{ d.name }}</td>
+                            <td>{{ d.roll_no }}</td>
+                            <td>{{ d.department }}</td>
+                            <td>{{ d.total }}</td>
+                            <td>{{ d.present }}</td>
+                            <td>{{ d.percentage }}%</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <hr class="my-4">
+
+        <h5>📩 Default Email Message</h5>
+
+        <div class="mb-3">
+            <textarea id="defaulterMessage" class="form-control" rows="10" readonly>
+Dear Parent,
+
+This is to inform you that your child has been marked as a defaulter due to attendance falling below 75%.
+
+Below are the details of the student :
+
+{% for d in defaulters %}
+- {{ d.name }} (Roll No: {{ d.roll_no }}) - Department: {{ d.department }}, Attendance: {{ d.percentage }}%
+{% endfor %}
+
+We request you to take the necessary steps to ensure regular attendance.
+
+Regards,  
+{{ current_user.username }}  
+Class Teacher
+            </textarea>
+        </div>
+
+        <button onclick="copyMessage()" class="btn btn-warning mb-3">📋 Copy to Clipboard</button>
+        <p id="copyAlert" class="text-success" style="display: none;">Copied!</p>
+
+        <script>
+            function copyMessage() {
+                const textarea = document.getElementById("defaulterMessage");
+                textarea.select();
+                textarea.setSelectionRange(0, 99999); // for mobile
+                document.execCommand("copy");
+
+                const alert = document.getElementById("copyAlert");
+                alert.style.display = 'block';
+                setTimeout(() => alert.style.display = 'none', 2000);
+            }
+        </script>
+
+    {% else %}
+        <p class="text-muted">No students found in the defaulter list. Great job!</p>
+    {% endif %}
+</div>
+{% endblock %}

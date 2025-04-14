@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Attendance History{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Attendance History</h2>
+
+    <!-- Department Filter -->
+    <form method="get" class="mb-4 d-flex flex-wrap justify-content-between align-items-center">
+        <div>
+            <label class="me-2">Filter by Department:</label>
+            <select name="department_id" class="form-select d-inline-block w-auto" onchange="this.form.submit()">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if selected_dept_id == dept.id %}selected{% endif %}>
+                        {{ dept.department_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mt-2 mt-sm-0">
+            <a href="{{ url_for('export_attendance_history', department_id=selected_dept_id) }}" class="btn btn-success">
+                Download CSV
+            </a>
+        </div>
+    </form>
+
+    {% if history %}
+    <!-- Attendance Table -->
+    <div class="table-responsive mb-5">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Roll No</th>
+                    <th>Department</th>
+                    <th>Total</th>
+                    <th>Present</th>
+                    <th>%</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in history %}
+                <tr>
+                    <td>{{ record.name }}</td>
+                    <td>{{ record.roll_no }}</td>
+                    <td>{{ record.department }}</td>
+                    <td>{{ record.total }}</td>
+                    <td>{{ record.present }}</td>
+                    <td>{{ record.percentage }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Attendance Chart -->
+    {% if chart_labels and chart_data %}
+    <div class="mb-5">
+        <h4 class="mb-3">Attendance % Chart</h4>
+        <canvas id="attendanceChart" width="400" height="200"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const labels = {{ chart_labels | tojson | safe }};
+            const data = {{ chart_data | tojson | safe }};
+
+            const backgroundColors = Array(data.length).fill('rgba(54, 162, 235, 0.6)');
+            const borderColors = Array(data.length).fill('rgba(54, 162, 235, 1)');
+
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Attendance %',
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+    responsive: true,
+    scales: {
+        x: {
+            ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 30,
+                color: '#ffffff'
+            }
+        },
+        y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+                color: '#ffffff'
+            }
+        }
+    },
+    plugins: {
+        legend: {
+            labels: {
+                color: '#ffffff'
+            }
+        }
+    }
+}
+
+            });
+        });
+    </script>
+    {% endif %}
+    {% else %}
+        <p class="text-muted">No attendance history available.</p>
+    {% endif %}
+</div>
+{% endblock %}

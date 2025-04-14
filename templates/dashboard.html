@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<h2 class="mb-4">Welcome, {{ current_user.username }} </h2>
+
+<!-- Dashboard Summary Cards -->
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card text-white bg-success shadow-sm">
+      <div class="card-header fw-bold">Attendance Today</div>
+      <div class="card-body">
+        <h3 class="card-title text-center">{{ attendance_today }}</h3>
+        <p class="card-text text-center">Marked entries today</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card text-white bg-primary shadow-sm">
+      <div class="card-header fw-bold">Total Students</div>
+      <div class="card-body">
+        <h3 class="card-title text-center">{{ student_count }}</h3>
+        <p class="card-text text-center">Enrolled students</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card text-white bg-warning shadow-sm">
+      <div class="card-header fw-bold">Total Departments</div>
+      <div class="card-body">
+        <h3 class="card-title text-center">{{ department_count }}</h3>
+        <p class="card-text text-center">Total departments</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Action Buttons -->
+<div class="mt-5 d-flex flex-wrap gap-3">
+  <a href="{{ url_for('add_student') }}" class="btn btn-outline-success btn-lg">
+    ➕ Add Student
+  </a>
+  <a href="{{ url_for('add_department') }}" class="btn btn-outline-primary btn-lg">
+    🏫 Add Department
+  </a>
+  <a href="{{ url_for('mark_attendance') }}" class="btn btn-outline-warning btn-lg">
+    📝 Mark Attendance
+  </a>
+</div>
+
+{% endblock %}

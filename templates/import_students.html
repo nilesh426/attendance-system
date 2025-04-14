@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Import Students{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+    <h3 class="mb-4">Import Student List from Excel</h3>
+
+    <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">Upload .xlsx File</label>
+            <input type="file" name="file" class="form-control" accept=".xlsx" required>
+        </div>
+        <button type="submit" class="btn btn-success">Upload & Import</button>
+    </form>
+
+    <hr class="my-4">
+
+    <p class="text-muted">📄 The Excel file must have these columns:</p>
+    <ul>
+        <li><strong>Student Name</strong></li>
+        <li><strong>Roll No</strong></li>
+        <li><strong>Department Name</strong></li>
+    </ul>
+</div>
+{% endblock %}

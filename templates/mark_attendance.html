@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Mark Attendance{% endblock %}
+{% block content %}
+<h2>Mark Attendance</h2>
+
+<form method="get" class="row g-3 mb-4">
+    <div class="col-md-4">
+        <label for="department-filter" class="form-label">Select Department</label>
+        <select id="department-filter" name="department_id" class="form-select" onchange="this.form.submit()">
+            <option value="">-- Select --</option>
+            {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if dept.id == selected_department_id %}selected{% endif %}>
+                    {{ dept.department_name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label for="attendance-date" class="form-label">Select Date</label>
+        <input type="date" id="attendance-date" name="date" value="{{ selected_date }}" class="form-control" onchange="this.form.submit()">
+    </div>
+</form>
+
+{% if students %}
+<form method="POST">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Student Name</th>
+                <th>Roll No</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ student.student_name }}</td>
+                <td>{{ student.roll_no }}</td>
+                <td>
+                    <select name="status_{{ student.id }}" class="form-select">
+                        <option value="Present">Present</option>
+                        <option value="Absent">Absent</option>
+                    </select>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button type="submit" class="btn btn-success">Submit Attendance</button>
+</form>
+{% elif selected_department_id %}
+<p>No students found in this department.</p>
+{% endif %}
+{% endblock %}

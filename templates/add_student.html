@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Add Student{% endblock %}
+{% block content %}
+<h2>Add Student</h2>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        {{ form.student_name.label }} {{ form.student_name(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.roll_no.label }} {{ form.roll_no(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.department_id.label }} {{ form.department_id(class="form-select") }}
+    </div>
+    {{ form.submit(class="btn btn-success") }}
+</form>
+{% endblock %}
