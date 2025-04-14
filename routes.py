@@ -4,6 +4,9 @@ from io import StringIO, BytesIO
 import csv
 import datetime
 from datetime import datetime as dt
+import os
+import pandas as pd
+from werkzeug.utils import secure_filename
 
 from models import Teacher, Department, Student, Attendance
 from forms import TeacherLoginForm as LoginForm, TeacherRegistrationForm as RegistrationForm, DepartmentForm, StudentForm
@@ -71,13 +74,8 @@ def register_routes(app):
     @app.route('/students/add', methods=['GET', 'POST'])
     @login_required
     def add_student():
-        preselected_dept_id = request.args.get('department_id', type=int)
         form = StudentForm()
         form.department_id.choices = [(d.id, d.department_name) for d in Department.query.filter_by(teacher_id=current_user.id).all()]
-
-        if preselected_dept_id:
-            form.department_id.data = preselected_dept_id
-
         if form.validate_on_submit():
             student = Student(
                 student_name=form.student_name.data,
@@ -94,17 +92,17 @@ def register_routes(app):
     @app.route('/attendance/mark', methods=['GET', 'POST'])
     @login_required
     def mark_attendance():
-        selected_department_id = request.args.get('department_id', type=int)
+        department_id = request.args.get('department_id', type=int)
         date_str = request.args.get('date', datetime.date.today().strftime('%Y-%m-%d'))
         selected_date = dt.strptime(date_str, '%Y-%m-%d').date()
 
         departments = Department.query.filter_by(teacher_id=current_user.id).all()
         students = []
 
-        if selected_department_id:
+        if department_id:
             students = Student.query.filter_by(
                 teacher_id=current_user.id,
-                department_id=selected_department_id
+                department_id=department_id
             ).all()
 
         if request.method == 'POST':
@@ -122,13 +120,13 @@ def register_routes(app):
                     db.session.add(attendance)
             db.session.commit()
             flash('Attendance marked successfully!', 'success')
-            return redirect(url_for('dashboard'))  # ✅ Fixed redirect target
+            return redirect(url_for('dashboard'))
 
         return render_template(
             'mark_attendance.html',
             departments=departments,
             students=students,
-            selected_department_id=selected_department_id,
+            selected_department_id=department_id,
             selected_date=date_str
         )
 
@@ -148,21 +146,21 @@ def register_routes(app):
         chart_data = []
 
         for student in students:
-            total_classes = Attendance.query.filter_by(student_id=student.id).count()
-            presents = Attendance.query.filter_by(student_id=student.id, status='Present').count()
-            percentage = (presents / total_classes * 100) if total_classes > 0 else 0
+            total = Attendance.query.filter_by(student_id=student.id).count()
+            present = Attendance.query.filter_by(student_id=student.id, status='Present').count()
+            percent = (present / total * 100) if total else 0
 
             history.append({
                 'name': student.student_name,
                 'roll_no': student.roll_no,
                 'department': student.department.department_name,
-                'total': total_classes,
-                'present': presents,
-                'percentage': round(percentage, 2)
+                'total': total,
+                'present': present,
+                'percentage': round(percent, 2)
             })
 
             chart_labels.append(student.student_name)
-            chart_data.append(round(percentage, 2))
+            chart_data.append(round(percent, 2))
 
         return render_template(
             'attendance_history.html',
@@ -177,39 +175,87 @@ def register_routes(app):
     @login_required
     def export_attendance_history():
         selected_dept_id = request.args.get('department_id', type=int)
-        students_query = Student.query.filter_by(teacher_id=current_user.id)
-
+        students = Student.query.filter_by(teacher_id=current_user.id)
         if selected_dept_id:
-            students_query = students_query.filter_by(department_id=selected_dept_id)
-
-        students = students_query.all()
+            students = students.filter_by(department_id=selected_dept_id)
 
         si = StringIO()
-        cw = csv.writer(si)
-        cw.writerow(['Student Name', 'Roll No', 'Department', 'Total Classes', 'Present', 'Attendance %'])
+        writer = csv.writer(si)
+        writer.writerow(['Name', 'Roll No', 'Department', 'Total', 'Present', 'Percentage'])
 
-        for student in students:
-            total_classes = Attendance.query.filter_by(student_id=student.id).count()
-            presents = Attendance.query.filter_by(student_id=student.id, status='Present').count()
-            percentage = (presents / total_classes * 100) if total_classes > 0 else 0
+        for s in students:
+            total = Attendance.query.filter_by(student_id=s.id).count()
+            present = Attendance.query.filter_by(student_id=s.id, status='Present').count()
+            percent = (present / total * 100) if total else 0
 
-            cw.writerow([
-                student.student_name,
-                student.roll_no,
-                student.department.department_name,
-                total_classes,
-                presents,
-                round(percentage, 2)
+            writer.writerow([
+                s.student_name,
+                s.roll_no,
+                s.department.department_name,
+                total,
+                present,
+                round(percent, 2)
             ])
 
         mem = BytesIO()
         mem.write(si.getvalue().encode('utf-8'))
         mem.seek(0)
-        si.close()
+        return send_file(mem, mimetype='text/csv', download_name='attendance_history.csv', as_attachment=True)
 
-        return send_file(
-            mem,
-            mimetype='text/csv',
-            download_name='attendance_history.csv',
-            as_attachment=True
-        )
+    @app.route('/defaulters')
+    @login_required
+    def defaulter_list():
+        students = Student.query.filter_by(teacher_id=current_user.id).all()
+        defaulters = []
+        for student in students:
+            total = Attendance.query.filter_by(student_id=student.id).count()
+            present = Attendance.query.filter_by(student_id=student.id, status='Present').count()
+            percent = (present / total * 100) if total else 0
+            if percent < 75:
+                defaulters.append({
+                    'name': student.student_name,
+                    'roll_no': student.roll_no,
+                    'department': student.department.department_name,
+                    'total': total,
+                    'present': present,
+                    'percentage': round(percent, 2)
+                })
+        return render_template('defaulter_list.html', defaulters=defaulters)
+
+    @app.route('/students/import', methods=['GET', 'POST'])
+    @login_required
+    def import_students():
+        if request.method == 'POST':
+            file = request.files['file']
+            if not file or not file.filename.endswith(('.xls', '.xlsx')):
+                flash('Please upload a valid Excel file (.xls or .xlsx)', 'danger')
+                return redirect(url_for('import_students'))
+
+            filename = secure_filename(file.filename)
+            filepath = os.path.join('uploads', filename)
+            os.makedirs('uploads', exist_ok=True)
+            file.save(filepath)
+
+            df = pd.read_excel(filepath)
+
+            for _, row in df.iterrows():
+                dept_name = row['Department']
+                dept = Department.query.filter_by(department_name=dept_name, teacher_id=current_user.id).first()
+                if not dept:
+                    dept = Department(department_name=dept_name, teacher_id=current_user.id)
+                    db.session.add(dept)
+                    db.session.commit()
+
+                student = Student(
+                    student_name=row['Name'],
+                    roll_no=row['Roll No'],
+                    department_id=dept.id,
+                    teacher_id=current_user.id
+                )
+                db.session.add(student)
+
+            db.session.commit()
+            flash('Students imported successfully!', 'success')
+            return redirect(url_for('dashboard'))
+
+        return render_template('import_students.html')
