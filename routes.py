@@ -236,7 +236,16 @@ def register_routes(app):
             os.makedirs('uploads', exist_ok=True)
             file.save(filepath)
 
-            df = pd.read_excel(filepath)
+            try:
+                df = pd.read_excel(filepath)
+            except Exception as e:
+                flash(f'Error reading Excel file: {e}', 'danger')
+                return redirect(url_for('import_students'))
+
+            required_columns = {'Name', 'Roll No', 'Department'}
+            if not required_columns.issubset(df.columns):
+                flash('Excel file must have columns: Name, Roll No, Department', 'danger')
+                return redirect(url_for('import_students'))
 
             for _, row in df.iterrows():
                 dept_name = row['Department']
