@@ -26,95 +26,109 @@
     </form>
 
     {% if history %}
-    <!-- Attendance Table -->
-    <div class="table-responsive mb-5">
-        <table class="table table-bordered table-striped">
-            <thead class="table-dark">
-                <tr>
-                    <th>Name</th>
-                    <th>Roll No</th>
-                    <th>Department</th>
-                    <th>Total</th>
-                    <th>Present</th>
-                    <th>%</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in history %}
-                <tr>
-                    <td>{{ record.name }}</td>
-                    <td>{{ record.roll_no }}</td>
-                    <td>{{ record.department }}</td>
-                    <td>{{ record.total }}</td>
-                    <td>{{ record.present }}</td>
-                    <td>{{ record.percentage }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+        <!-- Attendance Table -->
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Roll No</th>
+                        <th>Department</th>
+                        <th>Total</th>
+                        <th>Present</th>
+                        <th>%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in history %}
+                        <tr>
+                            <td>{{ record.name }}</td>
+                            <td>{{ record.roll_no }}</td>
+                            <td>{{ record.department }}</td>
+                            <td>{{ record.total }}</td>
+                            <td>{{ record.present }}</td>
+                            <td>{{ record.percentage }}%</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-    <!-- Attendance Chart -->
-    {% if chart_labels and chart_data %}
-    <div class="mb-5">
-        <h4 class="mb-3">Attendance % Chart</h4>
-        <canvas id="attendanceChart" width="400" height="200"></canvas>
-    </div>
+        <!-- Attendance Chart -->
+        {% if chart_labels and chart_data %}
+        <div class="mb-5">
+            <h4 class="mb-3">Attendance % Chart</h4>
+            <canvas id="attendanceChart" width="400" height="200"></canvas>
+        </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const labels = {{ chart_labels | tojson | safe }};
-            const data = {{ chart_data | tojson | safe }};
+        <!-- Chart JS CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script type="application/javascript">
+            document.addEventListener('DOMContentLoaded', function () {
+                const labels = {{ chart_labels | tojson | safe }};
+                const data = {{ chart_data | tojson | safe }};
 
-            const backgroundColors = Array(data.length).fill('rgba(54, 162, 235, 0.6)');
-            const borderColors = Array(data.length).fill('rgba(54, 162, 235, 1)');
+                const backgroundColors = data.map(percent => {
+                    return percent >= 75
+                        ? 'rgba(75, 192, 192, 0.6)' // Green
+                        : 'rgba(255, 99, 132, 0.6)'; // Red
+                });
 
-            const ctx = document.getElementById('attendanceChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Attendance %',
-                        data: data,
-                        backgroundColor: backgroundColors,
-                        borderColor: borderColors,
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-    responsive: true,
-    scales: {
-        x: {
-            ticks: {
-                autoSkip: false,
-                maxRotation: 45,
-                minRotation: 30,
-                color: '#ffffff'
-            }
-        },
-        y: {
-            beginAtZero: true,
-            max: 100,
-            ticks: {
-                color: '#ffffff'
-            }
-        }
-    },
-    plugins: {
-        legend: {
-            labels: {
-                color: '#ffffff'
-            }
-        }
-    }
-}
+                const borderColors = data.map(percent => {
+                    return percent >= 75
+                        ? 'rgba(75, 192, 192, 1)'
+                        : 'rgba(255, 99, 132, 1)';
+                });
 
+                const ctx = document.getElementById('attendanceChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Attendance %',
+                            data: data,
+                            backgroundColor: backgroundColors,
+                            borderColor: borderColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Attendance %'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    autoSkip: false,
+                                    maxRotation: 90,
+                                    minRotation: 90,
+                                    font: {
+                                        size: 10
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label}: ${context.parsed.y}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
             });
-        });
-    </script>
-    {% endif %}
+        </script>
+        {% endif %}
     {% else %}
         <p class="text-muted">No attendance history available.</p>
     {% endif %}
